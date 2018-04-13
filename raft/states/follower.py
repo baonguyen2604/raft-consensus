@@ -35,7 +35,6 @@ class Follower(Voter):
 
     def on_append_entries(self, message):
         # reset timeout
-        # self._timeoutTime = self._nextTimeout()
         self.election_timer.reset()
 
         # if message.term < currentTerm -> false

@@ -31,7 +31,7 @@ class Leader(State):
 
             # send new log to client and wait for respond
             appendEntry = AppendEntriesMessage(
-                self._server._name,
+                self._server._port,
                 message.sender,
                 self._server._currentTerm,
                 {
@@ -55,7 +55,7 @@ class Leader(State):
 
     def _send_heartbeat(self):
         message = AppendEntriesMessage(
-            self._server._name,
+            self._server._port,
             None,
             self._server._currentTerm,
             {
