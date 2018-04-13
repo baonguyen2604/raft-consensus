@@ -46,9 +46,10 @@ class Candidate(Voter):
             return self, None
 
     def _start_election(self):
+        # self.candidate_timer.stop()
         self._server._currentTerm += 1
         election = RequestVoteMessage(
-            self._server._name,
+            self._server._port,
             None,
             self._server._currentTerm,
             {
@@ -57,7 +58,7 @@ class Candidate(Voter):
             }
         )
         self._server.broadcast(election)
-        self._last_vote = self._server._name
+        self._last_vote = self._server._port
 
     def _resign(self):
         self.candidate_timer.stop()

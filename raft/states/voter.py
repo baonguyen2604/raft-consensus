@@ -20,8 +20,8 @@ class Voter(State):
 
     def _send_vote_response_message(self, message, votedYes=True):
         vote_response = RequestVoteResponseMessage(
-            self._server._name,
+            self._server._port,
             message.sender,
             message.term,
             {"response": votedYes})
-        self._server.send_message_response(vote_response)
+        self._server.send_message_response(vote_response, vote_response.receiver)

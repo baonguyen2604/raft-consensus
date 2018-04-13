@@ -22,6 +22,7 @@ def update_neighbours(nodes):
         for j in range(0, len(nodes)):
             if i != j:
                 nodes[i]._neighbours.append(nodes[j])
+                nodes[i]._neiports.append(nodes[j]._port[1])
 
 
 if __name__ == '__main__':

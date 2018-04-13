@@ -23,6 +23,7 @@ class State(object):
             self._server._currentTerm = message.term
         elif (message.term < self._server._currentTerm):
             self._send_response_message(message, votedYes=False)
+            return self, None
 
         if (_type == BaseMessage.AppendEntries):
             return self.on_append_entries(message)
@@ -53,7 +54,7 @@ class State(object):
 
     def _send_response_message(self, msg, votedYes=True):
         response = ResponseMessage(
-            self._server._name,
+            self._server._port,
             msg.sender,
             msg.term,
             {
@@ -61,4 +62,4 @@ class State(object):
                 "currentTerm": self._server._currentTerm,
             }
         )
-        self._server.send_message_response(response)
+        self._server.send_message_response(response, msg.sender)
