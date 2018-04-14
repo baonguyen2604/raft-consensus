@@ -42,6 +42,7 @@ class State(object):
 
     def on_vote_received(self, message):
         """Called when this node receives a vote"""
+        return self, None
 
     def on_append_entries(self, message):
         """Called when there is a request for this node to append entries"""

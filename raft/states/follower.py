@@ -8,26 +8,21 @@ import random
 # concrete class for follower state
 class Follower(Voter):
 
-    def __init__(self, timeout=0.5):
+    def __init__(self, timeout=0.6):
         Voter.__init__(self)
         self._timeout = timeout
 
     def set_server(self, server):
         self._server = server
         self.election_timer = Timer(self.election_interval(), self._start_election)
-        self._start()
-
-    def _start(self):
         self.election_timer.start()
-
-    def _stop(self):
-        self.election_timer.stop()
 
     def election_interval(self):
         return random.uniform(self._timeout, 2 * self._timeout)
 
     def _start_election(self):
-        self._stop()
+        # print('Follower at', self._server._port, 'turning to Candidate')
+        self.election_timer.stop()
         candidate = Candidate()
         self._server._state = candidate
         candidate.set_server(self._server)
@@ -42,16 +37,16 @@ class Follower(Voter):
             self._send_response_message(message, votedYes=False)
             return self, None
 
-        if (message.data != {}):
+        if message.data != {}:
             log = self._server._log
             data = message.data
             self._leaderPort = data["leaderPort"]
 
             # TODO: copied from simpleRaft. check logic
             # Check if leader is too far ahead in log
-            if (data["leaderCommit"] != self._server._commitIndex):
+            if data['leaderCommit'] != self._server._commitIndex:
                 # if so then we use length of log - 1
-                self._server._commitIndex = min(data["leaderCommit"], len(log) - 1)
+                self._server._commitIndex = min(data['leaderCommit'], len(log) - 1)
 
             # If log is smaller than prevLogIndex -> not up-to-date
             if (len(log) < data["prevLogIndex"]):
@@ -110,9 +105,21 @@ class Follower(Voter):
 
     def on_client_command(self, message, client_port):
         print('Follower received client command')
-        # neis = self._server._neighbours
-        # for i in range(0, len(neis)):
-        #     if neis[i]._port == self._leaderPort:
-        #         neis[i].on_client_command(message, client_port)
+        neis = self._server._neighbours
+        for i in range(0, len(neis)):
+            if neis[i]._port[1] == self._leaderPort[1]:
+                neis[i]._state.on_client_command(message, client_port)
 
+    def on_vote_received(self, message):
+        return self, None
 
+    def on_vote_request(self, message):
+        self.election_timer.stop()
+        if self._last_vote is None and message.data["lastLogIndex"] >= self._server._lastLogIndex:
+            self._last_vote = message.sender
+            self._send_vote_response_message(message)
+        else:
+            self._send_vote_response_message(message, votedYes=False)
+
+        self.election_timer.start()
+        return self, None

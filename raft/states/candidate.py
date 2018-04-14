@@ -8,7 +8,7 @@ import random
 
 class Candidate(Voter):
 
-    def __init__(self, timeout=0.5):
+    def __init__(self, timeout=0.75):
         Voter.__init__(self)
         self._timeout = timeout
 
@@ -22,18 +22,23 @@ class Candidate(Voter):
     def candidate_interval(self):
         return random.uniform(self._timeout, 2 * self._timeout)
 
-    def on_vote_request(self, message):
-        return self, None
+    # def on_vote_request(self, message):
+    #     return self, None
+
+    def on_append_entries(self, message):
+        self._resign()
 
     def on_vote_received(self, message):
         # reset timer
         self.candidate_timer.reset()
 
-        if message.sender not in self._votes:
-            self._votes[message.sender] = message
+        if message.sender[1] not in self._votes:
+            self._votes[message.sender[1]] = message
 
             # check if received majorities
             if len(self._votes.keys()) > (self._server._total_nodes - 1) / 2:
+                self.candidate_timer.stop()
+                # print('Candidate at', self._server._port, 'turning to Leader')
                 leader = Leader()
                 self._server._state = leader
                 leader.set_server(self._server)
@@ -46,7 +51,7 @@ class Candidate(Voter):
             return self, None
 
     def _start_election(self):
-        # self.candidate_timer.stop()
+        self.candidate_timer.stop()
         self._server._currentTerm += 1
         election = RequestVoteMessage(
             self._server._port,
@@ -61,7 +66,9 @@ class Candidate(Voter):
         self._last_vote = self._server._port
 
     def _resign(self):
+        # print('Candidate at', self._server._port, 'turning to Follower')
         self.candidate_timer.stop()
+
         from .follower import Follower
         follower = Follower()
         self._server._state = follower
