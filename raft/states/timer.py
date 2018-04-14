@@ -1,5 +1,6 @@
 import asyncio
 
+
 class Timer:
     """Scheduling periodic callbacks"""
     def __init__(self, interval, callback):

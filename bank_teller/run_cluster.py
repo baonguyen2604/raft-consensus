@@ -9,7 +9,7 @@ def run_cluster():
     nodes = []
     for i in range(1, len(sys.argv)):
         state = raft.state_follower()
-        server = raft.create_server(i, state, [], [], sys.argv[i])
+        server = raft.create_server(i, state, [], [], sys.argv[i], loop)
         nodes.append(server)
 
     update_neighbours(nodes)
@@ -23,6 +23,7 @@ def update_neighbours(nodes):
             if i != j:
                 nodes[i]._neighbours.append(nodes[j])
                 nodes[i]._neiports.append(nodes[j]._port[1])
+                nodes[i]._total_nodes = len(nodes)
 
 
 if __name__ == '__main__':
