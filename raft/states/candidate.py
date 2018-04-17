@@ -22,9 +22,6 @@ class Candidate(Voter):
     def candidate_interval(self):
         return random.uniform(self._timeout, 2 * self._timeout)
 
-    # def on_vote_request(self, message):
-    #     return self, None
-
     def on_append_entries(self, message):
         self._resign()
 
@@ -74,3 +71,8 @@ class Candidate(Voter):
         self._server._state = follower
         follower.set_server(self._server)
         return follower, None
+
+    # TODO:
+    # If other candidates receive AppendEntries RPC, they check for the term number
+    # If the term number is greater than their own, they accept the server as the leader and return to follower state
+    # If the term number is smaller, they reject the RPC and still remain a candidate

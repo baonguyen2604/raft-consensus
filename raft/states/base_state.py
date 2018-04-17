@@ -63,4 +63,4 @@ class State(object):
                 "currentTerm": self._server._currentTerm,
             }
         )
-        self._server.send_message_response(response, msg.sender)
+        self._server.send_message_response(response)

@@ -8,7 +8,7 @@ import random
 # concrete class for follower state
 class Follower(Voter):
 
-    def __init__(self, timeout=0.6):
+    def __init__(self, timeout=0.5):
         Voter.__init__(self)
         self._timeout = timeout
 
@@ -31,11 +31,6 @@ class Follower(Voter):
     def on_append_entries(self, message):
         # reset timeout
         self.election_timer.reset()
-
-        # if message.term < currentTerm -> false
-        if (message.term < self._server._currentTerm):
-            self._send_response_message(message, votedYes=False)
-            return self, None
 
         if message.data != {}:
             log = self._server._log
@@ -67,8 +62,9 @@ class Follower(Voter):
             else:
                 # check if commitIndex is the same as the leader's
                 # make sure leaderCommit > 0 and data is different
+                # print('Data is: ', data)
                 if (len(log) > 0 and data["leaderCommit"] > 0 and
-                log[data["leaderCommit"]]["term"] != message.term):
+                log[data["leaderCommit"]-1]["term"] != message.term):
                     # data is different
                     # fix by taking current log and slicing it to leaderCommit + 1
                     # set the last value to commitValue
@@ -99,16 +95,16 @@ class Follower(Voter):
                         self._server._log = log
                         self._send_response_message(message)
             self._send_response_message(message)
+            # print('Follower at', self._server._port, 'log is:', self._server._log)
             return self, None
         else:
             return self, None
 
     def on_client_command(self, message, client_port):
-        print('Follower received client command')
         neis = self._server._neighbours
-        for i in range(0, len(neis)):
-            if neis[i]._port[1] == self._leaderPort[1]:
-                neis[i]._state.on_client_command(message, client_port)
+        for nei in neis:
+            if nei._port[1] == self._leaderPort[1]:
+                nei._state.on_client_command(message, client_port)
 
     def on_vote_received(self, message):
         return self, None

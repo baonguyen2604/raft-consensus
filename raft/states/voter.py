@@ -24,4 +24,4 @@ class Voter(State):
             message.sender,
             message.term,
             {"response": votedYes})
-        self._server.send_message_response(vote_response, vote_response.receiver)
+        self._server.send_message_response(vote_response)
