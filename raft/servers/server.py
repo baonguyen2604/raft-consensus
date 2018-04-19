@@ -14,7 +14,6 @@ class Server(object):
         self._state = state
         self._log = log
         self._port = port
-        # self._neighbours = neighbours
         self._neiports = neiports
         self._loop = loop
         self._queue = asyncio.Queue(loop=self._loop)
@@ -24,7 +23,6 @@ class Server(object):
         for port in self._neiports:
             self._nei_portnum.append(port[1])
 
-        self.balance = 0
         self.client_port = None
         self._total_nodes = len(self._neiports) + 1
         self._commitIndex = 0
@@ -67,37 +65,20 @@ class Server(object):
             asyncio.ensure_future(self.post_message(message), loop=self._loop)
 
     async def post_message(self, message):
-        # print('Sending message of type', message.type, 'from', message.sender, 'to', message.receiver)
         await self._queue.put(message)
 
     def on_message(self, data, addr):
         addr = addr[1]
         if (addr not in self._nei_portnum) and (len(self._neiports) != 0):
             command = data.decode('utf8')
-            # print('Server at', self._port, 'Received data from', addr, command)
-            # print('Server state is', self._state)
             self._state.on_client_command(command, addr)
         elif addr in self._nei_portnum:
             try:
                 message = Serializer.deserialize(data)
                 message._receiver = message.receiver[0], message.receiver[1]
                 message._sender = message.sender[0], message.sender[1]
-                # print('Received message of type', message.type, 'from', message.sender, 'to', message.receiver)
-                try:
-                    state, response = self._state.on_message(message)
-                    self._state = state
-                except TypeError:
-                    print('NoneType error again:')
-                    print(message.receiver)
-                    print(message.sender)
-                    print(message.data)
-                    print(message.term)
-                    print(message.type)
-                    print(self._state)
-                    state, response = self._state.on_message(message)
-                    print(state)
-                    print(response)
-                    self._state = state
+                state, response = self._state.on_message(message)
+                self._state = state
 
             except KeyError:
                 message = Serializer.deserialize_client(data)

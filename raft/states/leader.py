@@ -2,12 +2,12 @@ from collections import defaultdict
 from .base_state import State
 from ..messages.append_entries import AppendEntriesMessage
 from .timer import Timer
-from socket import *
 
 import random
 import asyncio
 
 # TODO: check lastApplied and commitIndex
+
 
 class Leader(State):
 
@@ -36,21 +36,10 @@ class Leader(State):
         if (not message.data["response"]):
             # if not, back up log for this node
             self._nextIndexes[message.sender[1]] -= 1
-            print('follower nextIndex reduced to', self._nextIndexes[message.sender[1]])
             # get next log entry to send to follower
             prevIndex = max(0, self._nextIndexes[message.sender[1]] - 1)
             prev = self._server._log[prevIndex]
-            try:
-                current = self._server._log[self._nextIndexes[message.sender[1]]]
-            except IndexError:
-                print(self._server._log)
-                print(self._nextIndexes)
-                print(message.sender[1])
-                exit(1)
-            print('prevIndex:', prevIndex)
-            print('prevLogTerm:', prev['term'])
-            print(prev)
-            print(current)
+            current = self._server._log[self._nextIndexes[message.sender[1]]]
 
             # send new log to client and wait for respond
             append_entry = AppendEntriesMessage(
@@ -65,7 +54,6 @@ class Leader(State):
                     "entries": [current],
                     "leaderCommit": self._server._commitIndex,
                 })
-            # self._send_response_message(append_entry)
             asyncio.ensure_future(self._server.post_message(append_entry), loop=self._server._loop)
         else:
             # last append was good -> increase index
@@ -85,7 +73,7 @@ class Leader(State):
 
             if majority_response_received > (self._server._total_nodes - 1) / 2 \
                     and self._server._lastLogIndex > 0 and self._server._lastLogIndex == self._server._commitIndex+1:
-                print('Increasing commitIndex', self._server._lastLogIndex)
+                # committing next index
                 self._server._commitIndex += 1
 
                 client_addr = 'localhost', self._server.client_port
@@ -97,12 +85,9 @@ class Leader(State):
                 }
                 asyncio.ensure_future(self._server.post_message(message), loop=self._server._loop)
 
-
-
         return self, None
 
     def _send_heartbeat(self):
-        # print('Sending heartbeat from', self._server._port)
         message = AppendEntriesMessage(
             self._server._port,
             None,
@@ -116,8 +101,6 @@ class Leader(State):
                 "leaderCommit": self._server._commitIndex,
             }
         )
-        #print('Leader sending heartbeat')
-        #print(message.data)
         self._server.broadcast(message)
 
     def on_client_command(self, message, client_port):
@@ -148,48 +131,6 @@ class Leader(State):
         self._server._lastLogTerm = self._server._currentTerm
         self._server._lastLogIndex += 1
         self._server.broadcast(message)
-
-        print('Client request. Leader log is:')
-        log = self._server._log
-        for i in log:
-            print(i)
-        print('AppendEntries for client request is')
-        print(message.data)
-        print('leaderCommit is:', self._server._commitIndex)
-
-    # def execute_command(self):
-    #     command = self._server._log[self._server._lastLogIndex]['command']
-    #     self._server.balance = self._server._log[self._server._lastLogIndex]['balance']
-    #     command = command.split()
-    #     client_addr = 'localhost', self._server.client_port
-    #
-    #     if len(command) == 0:
-    #         response = "Invalid command"
-    #     elif len(command) == 1 and command[0] == 'query':
-    #         response = "Your current account balance is: " + str(self._server.balance)
-    #     elif len(command) == 2 and command[0] == 'credit':
-    #         if int(command[1]) <= 0:
-    #             response = "Credit amount must be positive"
-    #         else:
-    #             response = "Successfully credited " + command[1] + " to your account"
-    #             self._server.balance += int(command[1])
-    #     elif len(command) == 2 and command[0] == 'debit':
-    #         if self._server.balance >= int(command[1]):
-    #             if int(command[1]) <= 0:
-    #                 response = "Debit amount must be positive"
-    #             else:
-    #                 response = "Successfully debited " + command[1] + " from your account"
-    #                 self._server.balance -= int(command[1])
-    #         else:
-    #             response = "Insufficient account balance"
-    #     else:
-    #         response = "Invalid command"
-    #
-    #     message = {
-    #         'receiver': client_addr,
-    #         'value': response
-    #     }
-    #     asyncio.ensure_future(self._server.post_message(message), loop=self._server._loop)
 
     def execute_command(self, command):
         command = command.split()
