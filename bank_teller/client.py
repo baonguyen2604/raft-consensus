@@ -7,9 +7,7 @@ def run_client(server_port):
     sock = socket(AF_INET, SOCK_DGRAM)
 
     server_addr = 'localhost', server_port
-    local_addr = 'localhost', 10000
 
-    sock.bind(local_addr)
     cmd = ''
 
     print('Welcome to your ATM! You can check your balance, credit to or debit from your account')
