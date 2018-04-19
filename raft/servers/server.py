@@ -9,26 +9,28 @@ import threading
 
 class Server(object):
 
-    def __init__(self, name, state, log, neighbours, port, loop):
+    def __init__(self, name, state, log, neiports, port, loop):
         self._name = name
         self._state = state
         self._log = log
-        self._port = ('localhost', int(port))
-        self._neighbours = neighbours
-        self._neiports = []
+        self._port = port
+        # self._neighbours = neighbours
+        self._neiports = neiports
         self._loop = loop
         self._queue = asyncio.Queue(loop=self._loop)
         self._sock = socket(AF_INET, SOCK_DGRAM)
         self._sock.bind(self._port)
+        self._nei_portnum = []
+        for port in self._neiports:
+            self._nei_portnum.append(port[1])
 
-        # TODO: check logic
         self.balance = 0
         self.client_port = None
-        self._total_nodes = 0
+        self._total_nodes = len(self._neiports) + 1
         self._commitIndex = 0
         self._currentTerm = 0
         self._lastApplied = 0
-        self._lastLogIndex = -1
+        self._lastLogIndex = 0
         self._lastLogTerm = None
 
         self._state.set_server(self)
@@ -36,6 +38,7 @@ class Server(object):
         thread = UDP_Server(self._sock, self._loop, self)
         thread.start()
 
+        print(self._neiports)
         print('Listening on ', self._port)
 
     async def start(self):
@@ -52,14 +55,14 @@ class Server(object):
         )
 
     def broadcast(self, message):
-        for n in self._neighbours:
+        for n in self._neiports:
             # Have to create a deep copy of message to have different receivers
             send_message = copy.deepcopy(message)
-            send_message._receiver = n._port
+            send_message._receiver = n
             asyncio.ensure_future(self.post_message(send_message), loop=self._loop)
 
     def send_message_response(self, message):
-        n = [n for n in self._neiports if n == message.receiver[1]]
+        n = [n for n in self._neiports if n == message.receiver]
         if (len(n) > 0):
             asyncio.ensure_future(self.post_message(message), loop=self._loop)
 
@@ -69,18 +72,36 @@ class Server(object):
 
     def on_message(self, data, addr):
         addr = addr[1]
-        if (addr not in self._neiports) and (len(self._neiports) != 0):
+        if (addr not in self._nei_portnum) and (len(self._neiports) != 0):
             command = data.decode('utf8')
             # print('Server at', self._port, 'Received data from', addr, command)
             # print('Server state is', self._state)
             self._state.on_client_command(command, addr)
-        elif addr in self._neiports:
-            message = Serializer.deserialize(data)
-            message._receiver = message.receiver[0], message.receiver[1]
-            message._sender = message.sender[0], message.sender[1]
-            # print('Received message of type', message.type, 'from', message.sender, 'to', message.receiver)
-            state, response = self._state.on_message(message)
-            self._state = state
+        elif addr in self._nei_portnum:
+            try:
+                message = Serializer.deserialize(data)
+                message._receiver = message.receiver[0], message.receiver[1]
+                message._sender = message.sender[0], message.sender[1]
+                # print('Received message of type', message.type, 'from', message.sender, 'to', message.receiver)
+                try:
+                    state, response = self._state.on_message(message)
+                    self._state = state
+                except TypeError:
+                    print('NoneType error again:')
+                    print(message.receiver)
+                    print(message.sender)
+                    print(message.data)
+                    print(message.term)
+                    print(message.type)
+                    print(self._state)
+                    state, response = self._state.on_message(message)
+                    print(state)
+                    print(response)
+                    self._state = state
+
+            except KeyError:
+                message = Serializer.deserialize_client(data)
+                self._state.on_client_command(message['command'], message['client_port'])
 
 
 class UDP_Protocol(asyncio.DatagramProtocol):
@@ -101,9 +122,16 @@ class UDP_Protocol(asyncio.DatagramProtocol):
                 data = Serializer.serialize(message)
                 self.transport.sendto(data, message.receiver)
             else:
-                data = message['value'].encode('utf8')
-                addr = message['receiver']
-                self._server._sock.sendto(data, addr)
+                try:
+                    data = message['value'].encode('utf8')
+                    addr = message['receiver']
+                    print('Returning client request')
+                    self._server._sock.sendto(data, addr)
+                except KeyError:
+                    print('Redirecting client request')
+                    data = Serializer.serialize_client(message['command'], message['client_port'])
+                    addr = self._server._state._leaderPort
+                    self.transport.sendto(data, (addr[0], addr[1]))
 
     def connection_made(self, transport):
         self.transport = transport

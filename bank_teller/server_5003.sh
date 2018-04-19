@@ -3,4 +3,4 @@
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/../"
 
 # Start
-python3 run_cluster.py 5000 5001 5002 5003 5004
+python3 run_server.py -p 5003 -n 5001 5002 5000 5004
