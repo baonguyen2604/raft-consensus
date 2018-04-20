@@ -36,7 +36,6 @@ class Server(object):
         thread = UDP_Server(self._sock, self._loop, self)
         thread.start()
 
-        print(self._neiports)
         print('Listening on ', self._port)
 
     async def start(self):
@@ -85,6 +84,7 @@ class Server(object):
                 self._state.on_client_command(message['command'], message['client_port'])
 
 
+# async class to send messages between server
 class UDP_Protocol(asyncio.DatagramProtocol):
     def __init__(self, queue, message_handler, loop, neiports, server):
         self._queue = queue
@@ -122,9 +122,10 @@ class UDP_Protocol(asyncio.DatagramProtocol):
         self.message_handler(data, addr)
 
 
+# thread to wait for message from user client
 class UDP_Server(threading.Thread):
     def __init__(self, sock, loop, server, daemon=True):
-        threading.Thread.__init__(self,daemon=daemon)
+        threading.Thread.__init__(self, daemon=daemon)
         self._sock = sock
         self._loop = loop
         self._server = server
