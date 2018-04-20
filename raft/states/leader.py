@@ -6,9 +6,8 @@ from .timer import Timer
 import random
 import asyncio
 
-# TODO: check lastApplied and commitIndex
 
-
+# Raft leader. Currently does not support step down -> leader will stay forever until terminated
 class Leader(State):
 
     def __init__(self, heartbeat_timeout=0.5):
@@ -33,7 +32,7 @@ class Leader(State):
 
     def on_response_received(self, message):
         # check if last append_entries good?
-        if (not message.data["response"]):
+        if not message.data["response"]:
             # if not, back up log for this node
             self._nextIndexes[message.sender[1]] -= 1
             # get next log entry to send to follower
@@ -61,7 +60,7 @@ class Leader(State):
             self._matchIndex[message.sender[1]] += 1
 
             # check if caught up?
-            if (self._nextIndexes[message.sender[1]] > self._server._lastLogIndex):
+            if self._nextIndexes[message.sender[1]] > self._server._lastLogIndex:
                 self._nextIndexes[message.sender[1]] = self._server._lastLogIndex + 1
                 self._matchIndex[message.sender[1]] = self._server._lastLogIndex
 
@@ -71,7 +70,7 @@ class Leader(State):
                 if matchIndex == (self._server._lastLogIndex):
                     majority_response_received += 1
 
-            if majority_response_received > (self._server._total_nodes - 1) / 2 \
+            if majority_response_received >= (self._server._total_nodes - 1) / 2 \
                     and self._server._lastLogIndex > 0 and self._server._lastLogIndex == self._server._commitIndex+1:
                 # committing next index
                 self._server._commitIndex += 1

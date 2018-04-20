@@ -1,6 +1,3 @@
-import time
-import random
-
 from ..messages.base_message import BaseMessage
 from ..messages.response import ResponseMessage
 
@@ -33,9 +30,6 @@ class State(object):
             return self.on_vote_received(message)
         elif (_type == BaseMessage.Response):
             return self.on_response_received(message)
-
-    def on_leader_timeout(self, message):
-        """Called when leader timeout is reached"""
 
     def on_vote_request(self, message):
         """Called when there is a vote request"""

@@ -6,6 +6,7 @@ from .timer import Timer
 import random
 
 
+# Raft Candidate. Transition state between Follower and Leader
 class Candidate(Voter):
 
     def __init__(self, timeout=0.5):
@@ -45,6 +46,7 @@ class Candidate(Voter):
         else:
             return self, None
 
+    # start elections by increasing term, voting for itself and send out vote requests
     def _start_election(self):
         self.candidate_timer.start()
         self._server._currentTerm += 1
@@ -60,6 +62,7 @@ class Candidate(Voter):
         self._server.broadcast(election)
         self._last_vote = self._server._port
 
+    # received append entry from leader or not enough votes -> step down
     def _resign(self):
         self.candidate_timer.stop()
 

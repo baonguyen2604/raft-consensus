@@ -5,7 +5,8 @@ from .candidate import Candidate
 import random
 import asyncio
 
-# concrete class for follower state
+
+# Raft follower. Turns to candidate when it timeouts without receiving heartbeat from leader
 class Follower(Voter):
 
     def __init__(self, timeout=0.75):
@@ -21,7 +22,6 @@ class Follower(Voter):
         return random.uniform(self._timeout, 2 * self._timeout)
 
     def _start_election(self):
-        # print('Follower at', self._server._port, 'turning to Candidate')
         self.election_timer.stop()
         candidate = Candidate()
         self._server._state = candidate
@@ -31,9 +31,8 @@ class Follower(Voter):
     def on_append_entries(self, message):
         # reset timeout
         self.election_timer.reset()
-        # print('Received heartbeat from', message.sender)
 
-        if (message.term < self._server._currentTerm):
+        if message.term < self._server._currentTerm:
             self._send_response_message(message, votedYes=False)
             return self, None
 
@@ -92,6 +91,3 @@ class Follower(Voter):
             'client_port': client_port,
         }
         asyncio.ensure_future(self._server.post_message(message), loop=self._server._loop)
-
-    def on_vote_received(self, message):
-        return self, None

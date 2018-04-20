@@ -1,6 +1,3 @@
-import time
-
-
 class BaseMessage(object):
     AppendEntries = 'append_entries'
     RequestVote = 'request_vote'
@@ -8,8 +5,6 @@ class BaseMessage(object):
     Response = 'response'
 
     def __init__(self, sender, receiver, term, data):
-        self._timestamp = int(time.time())
-
         self._sender = sender
         self._receiver = receiver
         self._data = data
@@ -26,10 +21,6 @@ class BaseMessage(object):
     @property
     def data(self):
         return self._data
-
-    @property
-    def timestamp(self):
-        return self._timestamp
 
     @property
     def term(self):
