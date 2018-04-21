@@ -5,6 +5,7 @@ from socket import *
 import copy
 import asyncio
 import threading
+import errno
 
 
 class Server(object):
@@ -27,7 +28,6 @@ class Server(object):
         self._total_nodes = len(self._neiports) + 1
         self._commitIndex = 0
         self._currentTerm = 0
-        self._lastApplied = 0
         self._lastLogIndex = 0
         self._lastLogTerm = None
 
@@ -47,7 +47,7 @@ class Server(object):
             server=self
         )
         self.transport, _ = await asyncio.Task(
-            self._loop.create_datagram_endpoint(udp, local_addr=self._port),
+            self._loop.create_datagram_endpoint(udp, sock=self._sock),
             loop=self._loop
         )
 
@@ -132,7 +132,9 @@ class UDP_Server(threading.Thread):
 
     def run(self):
         while True:
-            data, addr = self._sock.recvfrom(1024)
-            self._loop.call_soon_threadsafe(self._server.on_message, data, addr)
-
-
+            try:
+                data, addr = self._sock.recvfrom(1024)
+                self._loop.call_soon_threadsafe(self._server.on_message, data, addr)
+            except IOError as exc:
+                if exc.errno == errno.EWOULDBLOCK:
+                    pass

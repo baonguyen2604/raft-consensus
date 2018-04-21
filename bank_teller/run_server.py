@@ -34,4 +34,8 @@ def run_server():
 
 
 if __name__ == '__main__':
-    run_server()
+    try:
+        run_server()
+    except KeyboardInterrupt:
+        print('Server terminated')
+        pass
