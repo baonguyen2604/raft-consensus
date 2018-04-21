@@ -80,7 +80,6 @@ class Follower(Voter):
                     self._send_response_message(message)
 
             self._send_response_message(message)
-            # print('Follower at', self._server._port, 'log is:', self._server._log)
             return self, None
         else:
             return self, None

@@ -24,4 +24,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 2:
         print("Usage: python client.py <server_port>")
         exit(-1)
-    run_client(int(sys.argv[1]))
+    try:
+        run_client(int(sys.argv[1]))
+    except KeyboardInterrupt:
+        print('Client terminated')
+        pass

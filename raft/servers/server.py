@@ -60,7 +60,7 @@ class Server(object):
 
     def send_message_response(self, message):
         n = [n for n in self._neiports if n == message.receiver]
-        if (len(n) > 0):
+        if len(n) > 0:
             asyncio.ensure_future(self.post_message(message), loop=self._loop)
 
     async def post_message(self, message):
