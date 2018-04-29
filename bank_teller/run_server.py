@@ -2,6 +2,7 @@ import raft
 import sys
 import asyncio
 
+
 def run_server():
     argc = len(sys.argv)
     if argc < 3:

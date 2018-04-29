@@ -2,6 +2,12 @@
 # Add raft package to PYTHONPATH
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/../"
 
+if [ $# -ne 1 ]; then
+  echo "Invalid number of arguments"
+  echo "Usage: ./run_server <server_port> where port can be 5000, 5001, 5002, 5003, or 5004"
+  exit
+fi
+
 case $1 in
   5000)
     echo Running server on port 5000
