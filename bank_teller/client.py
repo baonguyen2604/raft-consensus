@@ -4,6 +4,7 @@ from socket import *
 
 def run_client(server_port):
     sock = socket(AF_INET, SOCK_DGRAM)
+    sock.settimeout(5)
 
     server_addr = 'localhost', server_port
 
@@ -16,7 +17,11 @@ def run_client(server_port):
     while cmd != 'exit'.encode('utf8'):
         cmd = input('Enter command: ').encode('utf8')
         sock.sendto(cmd, server_addr)
-        data = sock.recv(1024)
+        try:
+            data = sock.recv(1024)
+        except OSError:
+            print('Timed out. Server is not responding')
+            continue
         print(data.decode('utf8'))
 
 
@@ -27,5 +32,5 @@ if __name__ == '__main__':
     try:
         run_client(int(sys.argv[1]))
     except KeyboardInterrupt:
-        print('Client terminated')
+        print('\nClient terminated')
         pass

@@ -38,5 +38,5 @@ if __name__ == '__main__':
     try:
         run_server()
     except KeyboardInterrupt:
-        print('Server terminated')
+        print('\nServer terminated')
         pass
