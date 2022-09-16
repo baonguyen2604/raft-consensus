@@ -17,7 +17,7 @@ class Server(object):
         self._port = port
         self._neiports = neiports
         self._loop = loop
-        self._queue = asyncio.Queue(loop=self._loop)
+        self._queue = asyncio.Queue()
         self._sock = socket(AF_INET, SOCK_DGRAM)
         self._sock.bind(self._port)
         self._nei_portnum = []
