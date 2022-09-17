@@ -41,7 +41,7 @@ class Candidate(Voter):
                 return leader, None
 
         # check if received all the votes -> resign
-        if len(self._votes) == len(self._server._neiports):
+        if len(self._votes) == len(self._server.other_nodes):
             self._resign()
         else:
             return self, None
@@ -51,7 +51,7 @@ class Candidate(Voter):
         self.candidate_timer.start()
         self._server._currentTerm += 1
         election = RequestVoteMessage(
-            self._server._port,
+            self._server.endpoint,
             None,
             self._server._currentTerm,
             {
@@ -60,7 +60,7 @@ class Candidate(Voter):
             }
         )
         self._server.broadcast(election)
-        self._last_vote = self._server._port
+        self._last_vote = self._server.endpoint
 
     # received append entry from leader or not enough votes -> step down
     def _resign(self):

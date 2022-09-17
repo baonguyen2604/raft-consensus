@@ -49,7 +49,7 @@ class State(object):
 
     def _send_response_message(self, msg, votedYes=True):
         response = ResponseMessage(
-            self._server._port,
+            self._server.endpoint,
             msg.sender,
             msg.term,
             {

@@ -2,12 +2,15 @@
 This fork was created to allow the use of gRPC for the message mechanism instead of UDP.
 
 Planned changes:
-- Add gRPC support, retaining UDP functions and preserving upstream compatibility as much as possible
+- Address some minor coding issues to improve clarity and testing
+- Add gRPC support, replacing UDP ops
 - Add startup pause/continue controls so that manually starting many nodes will not require long timeouts
 - Add log persistence
+- Add functions to support integration in server clusters with control and status operations
 
 Completed changes:
- - None
+ - Changed a few variable names to make things a bit clearer
+ - Changed banking demo app to support actual multi-machine (or dockers/vms) ops
 
 # Raft Distributed Consensus
 Simple implementation of [Raft Consensus Algorithm](raft.github.io) using Python for fault-tolerant distributed systems. Supports proper leader election and log replication.

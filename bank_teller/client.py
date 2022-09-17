@@ -2,11 +2,11 @@ import sys
 from socket import *
 
 
-def run_client(server_port):
+def run_client(server_host, server_port):
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.settimeout(5)
 
-    server_addr = 'localhost', server_port
+    server_addr = server_host, server_port
 
     cmd = ''
 
@@ -25,12 +25,20 @@ def run_client(server_port):
         print(data.decode('utf8'))
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 2:
-        print("Usage: python client.py <server_port>")
-        exit(-1)
+if __name__=="__main__":
+    import argparse
+    def create_parser():
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-p', '--port', required=False, default=5000,
+                            help="port on which server listens")
+        parser.add_argument('-i', '--ip_addr', required=False, default="localhost",
+                            help="IPV4 address of server")
+        return parser
+        
+    parser = create_parser()
+    args = parser.parse_args()
     try:
-        run_client(int(sys.argv[1]))
+        run_client(args.ip_addr, args.port)
     except KeyboardInterrupt:
         print('\nClient terminated')
         pass

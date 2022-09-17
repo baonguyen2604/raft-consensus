@@ -10,22 +10,22 @@ import errno
 
 class Server(object):
 
-    def __init__(self, name, state, log, neiports, port, loop):
+    def __init__(self, name, state, log, other_nodes, endpoint, loop):
         self._name = name
         self._state = state
         self._log = log
-        self._port = port
-        self._neiports = neiports
+        self.endpoint = endpoint
+        self.other_nodes = other_nodes
         self._loop = loop
         self._queue = asyncio.Queue()
         self._sock = socket(AF_INET, SOCK_DGRAM)
-        self._sock.bind(self._port)
+        self._sock.bind(self.endpoint)
         self._nei_portnum = []
-        for port in self._neiports:
+        for port in self.other_nodes:
             self._nei_portnum.append(port[1])
 
         self.client_port = None
-        self._total_nodes = len(self._neiports) + 1
+        self._total_nodes = len(self.other_nodes) + 1
         self._commitIndex = 0
         self._currentTerm = 0
         self._lastLogIndex = 0
@@ -36,14 +36,14 @@ class Server(object):
         thread = UDP_Server(self._sock, self._loop, self)
         thread.start()
 
-        print('Listening on ', self._port)
+        print('Listening on ', self.endpoint)
 
     async def start(self):
         udp = UDP_Protocol(
             queue=self._queue,
             message_handler=self.on_message,
             loop=self._loop,
-            neiports=self._neiports,
+            other_nodes=self.other_nodes,
             server=self
         )
         self.transport, _ = await asyncio.Task(
@@ -52,14 +52,14 @@ class Server(object):
         )
 
     def broadcast(self, message):
-        for n in self._neiports:
+        for n in self.other_nodes:
             # Have to create a deep copy of message to have different receivers
             send_message = copy.deepcopy(message)
             send_message._receiver = n
             asyncio.ensure_future(self.post_message(send_message), loop=self._loop)
 
     def send_message_response(self, message):
-        n = [n for n in self._neiports if n == message.receiver]
+        n = [n for n in self.other_nodes if n == message.receiver]
         if len(n) > 0:
             asyncio.ensure_future(self.post_message(message), loop=self._loop)
 
@@ -68,7 +68,7 @@ class Server(object):
 
     def on_message(self, data, addr):
         addr = addr[1]
-        if (addr not in self._nei_portnum) and (len(self._neiports) != 0):
+        if (addr not in self._nei_portnum) and (len(self.other_nodes) != 0):
             command = data.decode('utf8')
             self._state.on_client_command(command, addr)
         elif addr in self._nei_portnum:
@@ -86,11 +86,11 @@ class Server(object):
 
 # async class to send messages between server
 class UDP_Protocol(asyncio.DatagramProtocol):
-    def __init__(self, queue, message_handler, loop, neiports, server):
+    def __init__(self, queue, message_handler, loop, other_nodes, server):
         self._queue = queue
         self.message_handler = message_handler
         self._loop = loop
-        self._neiports = neiports
+        self.other_nodes = other_nodes
         self._server = server
 
     def __call__(self):

@@ -18,12 +18,12 @@ class Leader(State):
     def set_server(self, server):
         self._server = server
         # send heartbeat immediately
-        print('Leader on ', self._server._port, 'in term', self._server._currentTerm)
+        print('Leader on ', self._server.endpoint, 'in term', self._server._currentTerm)
         self._send_heartbeat()
         self.heartbeat_timer = Timer(self._heartbeat_interval(), self._send_heartbeat)
         self.heartbeat_timer.start()
 
-        for neiport in self._server._neiports:
+        for neiport in self._server.other_nodes:
             self._nextIndexes[neiport[1]] = self._server._lastLogIndex + 1
             self._matchIndex[neiport[1]] = 0
 
@@ -42,12 +42,12 @@ class Leader(State):
 
             # send new log to client and wait for respond
             append_entry = AppendEntriesMessage(
-                self._server._port,
+                self._server.endpoint,
                 message.sender,
                 self._server._currentTerm,
                 {
                     "leaderId": self._server._name,
-                    "leaderPort": self._server._port,
+                    "leaderPort": self._server.endpoint,
                     "prevLogIndex": prevIndex,
                     "prevLogTerm": prev["term"],
                     "entries": [current],
@@ -88,12 +88,12 @@ class Leader(State):
 
     def _send_heartbeat(self):
         message = AppendEntriesMessage(
-            self._server._port,
+            self._server.endpoint,
             None,
             self._server._currentTerm,
             {
                 "leaderId": self._server._name,
-                "leaderPort": self._server._port,
+                "leaderPort": self._server.endpoint,
                 "prevLogIndex": self._server._lastLogIndex,
                 "prevLogTerm": self._server._lastLogTerm,
                 "entries": [],
@@ -114,12 +114,12 @@ class Leader(State):
         self._server._log.append(entries[-1])
 
         message = AppendEntriesMessage(
-            self._server._port,
+            self._server.endpoint,
             None,
             self._server._currentTerm,
             {
                 "leaderId": self._server._name,
-                "leaderPort": self._server._port,
+                "leaderPort": self._server.endpoint,
                 "prevLogIndex": self._server._lastLogIndex,
                 "prevLogTerm": self._server._lastLogTerm,
                 "entries": entries,
