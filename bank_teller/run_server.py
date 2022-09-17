@@ -20,7 +20,11 @@ def run_server():
         for i in range(4, argc):
             neis.append(('localhost', int(sys.argv[i])))
 
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+
     state = raft.state_follower()
     log = []
     dummy_index = {
@@ -29,7 +33,9 @@ def run_server():
         'balance': None
     }
     log.append(dummy_index)
-    server = raft.create_server(name='raft', state=state, log=log, neiports=neis, port=server_port, loop=loop)
+    async def main():
+        server = raft.create_server(name='raft', state=state, log=log, neiports=neis, port=server_port, loop=loop)
+    loop.run_until_complete(main())
     loop.run_forever()
     loop.stop()
 
